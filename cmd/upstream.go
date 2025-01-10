@@ -10,7 +10,7 @@ var upstream = &cobra.Command{
 	Short: "Streaming upstream",
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		rtmpPusher := pusher.NewRtmpPusher(up.rUrl, up.sourceFile)
-		return pusher.Launch("test", rtmpPusher, duration)
+		return pusher.Launch(up.rUrl, rtmpPusher, duration)
 	},
 }
 

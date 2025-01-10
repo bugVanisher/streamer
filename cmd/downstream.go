@@ -29,7 +29,7 @@ var downstreamCmd = &cobra.Command{
 		}
 		down := downstream.NewFlvDownStreamer(down.pUrl, writer)
 
-		return downstream.Launch("download", down, duration)
+		return downstream.Launch(down.Url, down, duration)
 	},
 }
 

@@ -9,12 +9,14 @@ const (
 	CodeStreamNotExist  = 1002
 	CodeUnknown         = 9999
 	CodeConnectURL      = 2001
+	CodeContextDone     = 1
 )
 
 var (
 	ErrDuplicateStream = New(CodeDuplicateStream, "duplicate stream")
 	ErrStreamNotExist  = New(CodeStreamNotExist, "stream not exist")
 	ErrConnectURL      = New(CodeConnectURL, "connect url error")
+	ErrContextDone     = New(CodeContextDone, "context done")
 )
 
 const (

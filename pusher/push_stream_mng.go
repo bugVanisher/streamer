@@ -2,6 +2,7 @@ package pusher
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/bugVanisher/streamer/common/errs"
 	"sync"
@@ -37,7 +38,7 @@ func Launch(name string, pusher Pusher, duration time.Duration) error {
 	if _, ok := UpStreamerManager.streams.Load(name); ok {
 		UpStreamerManager.streams.Delete(name)
 	}
-	if err != nil {
+	if err != nil && !errors.Is(err, errs.ErrContextDone) {
 		return err
 	}
 	return nil

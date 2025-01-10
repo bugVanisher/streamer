@@ -1235,6 +1235,7 @@ func (self *conn) writeAVTag(tag flvio.Tag, ts int32) (err error) {
 	n := hdrlen + actualChunkHeaderLength
 
 	if n+len(data) > self.writeMaxChunkSize {
+		log.Debug().Msgf("set chunk size to:%d", n+len(data))
 		if err = self.writeSetChunkSize(n + len(data)); err != nil {
 			return
 		}

@@ -17,15 +17,15 @@ type downStreamInfo struct {
 	cancel       context.CancelFunc
 }
 
-var UpStreamerManager = &downStreamerManager{streams: sync.Map{}}
+var DownStreamerManager = &downStreamerManager{streams: sync.Map{}}
 
 func Launch(name string, downStreamer DownStreamer, duration time.Duration) error {
-	if _, ok := UpStreamerManager.streams.Load(name); ok {
+	if _, ok := DownStreamerManager.streams.Load(name); ok {
 		return errs.ErrDuplicateStream
 	}
 	ctx := context.Background()
 	ctx, ctxCancel := context.WithTimeout(ctx, duration)
-	UpStreamerManager.streams.Store(name, downStreamInfo{
+	DownStreamerManager.streams.Store(name, downStreamInfo{
 		downStreamer: downStreamer,
 		duration:     duration,
 		cancel:       ctxCancel,
@@ -33,8 +33,8 @@ func Launch(name string, downStreamer DownStreamer, duration time.Duration) erro
 	defer ctxCancel()
 	// Pull will block
 	_, err := downStreamer.Pull(ctx)
-	if _, ok := UpStreamerManager.streams.Load(name); ok {
-		UpStreamerManager.streams.Delete(name)
+	if _, ok := DownStreamerManager.streams.Load(name); ok {
+		DownStreamerManager.streams.Delete(name)
 	}
 	if err != nil {
 		return err
@@ -43,7 +43,7 @@ func Launch(name string, downStreamer DownStreamer, duration time.Duration) erro
 }
 
 func Stop(name string) error {
-	info, ok := UpStreamerManager.streams.Load(name)
+	info, ok := DownStreamerManager.streams.Load(name)
 	if !ok {
 		return errs.ErrStreamNotExist
 	}

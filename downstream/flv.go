@@ -2,6 +2,7 @@ package downstream
 
 import (
 	"context"
+	"errors"
 	"github.com/bugVanisher/streamer/common/errs"
 	"github.com/bugVanisher/streamer/media/av"
 	"github.com/bugVanisher/streamer/media/container/flv"
@@ -78,7 +79,7 @@ func (d *FlvDownStreamer) Pull(ctx context.Context) (bool, error) {
 	go d.LogStatistic(stop)
 	err = t.CopyAV(ctx, muxer, flv.NewDemuxer(response.Body))
 	stop <- true
-	if err != nil {
+	if err != nil && !errors.Is(err, errs.ErrContextDone) {
 		log.Error().Err(err).Msg("CopyAV error")
 		return false, errs.Wrapf(errs.ErrConnectURL, "url: %s", d.Url)
 	}

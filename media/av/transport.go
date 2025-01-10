@@ -2,7 +2,7 @@ package av
 
 import (
 	"context"
-	"fmt"
+	"github.com/bugVanisher/streamer/common/errs"
 	"io"
 	"time"
 )
@@ -99,7 +99,7 @@ func (t *Transport) CopyAV(ctx context.Context, dst Muxer, src Demuxer) error {
 		}
 	}
 	if contextDone(ctx) {
-		return fmt.Errorf("transport is canceled")
+		return errs.ErrContextDone
 	}
 	if err = dst.WriteTrailer(); err != nil {
 		return err
@@ -110,7 +110,7 @@ func (t *Transport) CopyAV(ctx context.Context, dst Muxer, src Demuxer) error {
 // CopyHeaders ...
 func (t *Transport) CopyHeaders(ctx context.Context, dst Muxer, src Demuxer) (err error) {
 	if contextDone(ctx) {
-		return fmt.Errorf("transport is canceled")
+		return errs.ErrContextDone
 	}
 	var headers []CodecData
 	if headers, err = src.Streams(); err != nil {
@@ -137,7 +137,7 @@ func (t *Transport) CopyPackets(ctx context.Context, dst Muxer, src Demuxer) (er
 	for {
 		t.lastSendTs = time.Now()
 		if contextDone(ctx) {
-			return fmt.Errorf("transport is canceled")
+			return errs.ErrContextDone
 		}
 		var pkt Packet
 		if pkt, err = src.ReadPacket(); err != nil {
