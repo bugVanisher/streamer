@@ -50,6 +50,7 @@ func Stop(name string) error {
 		return errs.ErrStreamNotExist
 	}
 	info.(upStreamInfo).cancel()
+	UpStreamerManager.streams.Delete(name)
 	return nil
 }
 
