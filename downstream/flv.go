@@ -2,10 +2,12 @@ package downstream
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"github.com/bugVanisher/streamer/common/errs"
 	"github.com/bugVanisher/streamer/media/av"
-	"github.com/bugVanisher/streamer/media/container/flv"
+	flvm "github.com/bugVanisher/streamer/media/container/flv"
+	"github.com/bugVanisher/streamer/media/protocol/flv"
 	"github.com/bugVanisher/streamer/statistics"
 	"github.com/rs/zerolog/log"
 	"io"
@@ -22,13 +24,20 @@ type FlvDownStreamer struct {
 	height    uint32
 	firstPkt  bool
 	codecType av.CodecType
+	options   *flv.Options
 }
 
-func NewFlvDownStreamer(url string, writer io.Writer) *FlvDownStreamer {
-	return &FlvDownStreamer{
+func NewFlvDownStreamer(url string, writer io.Writer, options ...flv.Option) *FlvDownStreamer {
+	flvDownStreamer := &FlvDownStreamer{
 		Url:    url,
 		Writer: writer,
 	}
+	opts := flv.DefaultOptions
+	for _, o := range options {
+		o(&opts)
+	}
+	flvDownStreamer.options = &opts
+	return flvDownStreamer
 }
 
 func (d *FlvDownStreamer) Pull(ctx context.Context) (bool, error) {
@@ -40,6 +49,9 @@ func (d *FlvDownStreamer) Pull(ctx context.Context) (bool, error) {
 		IdleConnTimeout:       90 * time.Second,
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true, // 忽略证书验证
+		},
 	}
 	httpClient := &http.Client{
 		Transport: httpTransport,
@@ -74,10 +86,10 @@ func (d *FlvDownStreamer) Pull(ctx context.Context) (bool, error) {
 		}
 		return nil
 	}), av.WithAfterReadHeaders(d.AfterReadHeader))
-	muxer := flv.NewMuxer(d.Writer)
+	muxer := flvm.NewMuxer(d.Writer)
 	stop := make(chan bool)
 	go d.LogStatistic(stop)
-	err = t.CopyAV(ctx, muxer, flv.NewDemuxer(response.Body))
+	err = t.CopyAV(ctx, muxer, flvm.NewDemuxer(response.Body))
 	stop <- true
 	if err != nil && !errors.Is(err, errs.ErrContextDone) {
 		log.Error().Err(err).Msg("CopyAV error")
@@ -95,7 +107,7 @@ func (d *FlvDownStreamer) LogStatistic(done chan bool) {
 		case <-done:
 			return
 		case <-ticker.C:
-			stat := &statistics.StreamHandler{
+			stat := statistics.StreamHandler{
 				VideoBitrate:  d.avFlow.VideoBitrate.GetBitrate(),
 				VideoFPS:      d.avFlow.VideoFPS.GetFPS(),
 				AudioFPS:      d.avFlow.AudioFPS.GetFPS(),
@@ -107,7 +119,10 @@ func (d *FlvDownStreamer) LogStatistic(done chan bool) {
 				VideoHeight:   d.height,
 				VideoDelay:    d.avFlow.VideoDelay.GetDelay(),
 			}
-			log.Debug().Any("statistic", stat).Str("codecType", d.codecType.String()).Msgf("%s stat", d.Url)
+			//log.Debug().Any("statistic", stat).Str("codecType", d.codecType.String()).Msgf("%s stat", d.Url)
+			if d.options.StatisticHook != nil {
+				d.options.StatisticHook.OnStatisticStat(stat)
+			}
 		}
 	}
 
