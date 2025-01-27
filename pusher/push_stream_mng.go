@@ -3,7 +3,6 @@ package pusher
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/bugVanisher/streamer/common/errs"
 	"sync"
 	"time"
@@ -14,9 +13,16 @@ type upStreamerManager struct {
 }
 
 type upStreamInfo struct {
-	pusher   Pusher
-	duration time.Duration
-	cancel   context.CancelFunc
+	pusher    Pusher
+	duration  time.Duration
+	cancel    context.CancelFunc
+	startTime time.Time
+}
+
+type Expose struct {
+	Name      string
+	StartTime time.Time
+	Dur       time.Duration
 }
 
 var UpStreamerManager = &upStreamerManager{streams: sync.Map{}}
@@ -28,9 +34,10 @@ func Launch(name string, pusher Pusher, duration time.Duration) error {
 	ctx := context.Background()
 	ctx, ctxCancel := context.WithTimeout(ctx, duration)
 	UpStreamerManager.streams.Store(name, upStreamInfo{
-		pusher:   pusher,
-		duration: duration,
-		cancel:   ctxCancel,
+		pusher:    pusher,
+		duration:  duration,
+		cancel:    ctxCancel,
+		startTime: time.Now(),
 	})
 	defer ctxCancel()
 	// publish will block
@@ -58,15 +65,20 @@ func StopAll() {
 	UpStreamerManager.streams.Range(func(key, value interface{}) bool {
 		pushInfo := value.(upStreamInfo)
 		pushInfo.cancel()
+		UpStreamerManager.streams.Delete(key.(string))
 		return true
 	})
 }
 
-func GetAllStreamInfos() (infos []string) {
+func GetAllStreamInfos() (infos []Expose) {
 	UpStreamerManager.streams.Range(func(key, value interface{}) bool {
 		name := key.(string)
 		pushInfo := value.(upStreamInfo)
-		infos = append(infos, fmt.Sprintf("%s-%s", name, pushInfo.duration))
+		infos = append(infos, Expose{
+			Name:      name,
+			StartTime: pushInfo.startTime,
+			Dur:       pushInfo.duration,
+		})
 		return true
 	})
 	return infos
