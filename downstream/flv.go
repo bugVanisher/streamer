@@ -118,8 +118,8 @@ func (d *FlvDownStreamer) LogStatistic(done chan bool) {
 				VideoWidth:    d.width,
 				VideoHeight:   d.height,
 				VideoDelay:    d.avFlow.VideoDelay.GetDelay(),
+				CodecType:     d.codecType.String(),
 			}
-			//log.Debug().Any("statistic", stat).Str("codecType", d.codecType.String()).Msgf("%s stat", d.Url)
 			if d.options.StatisticHook != nil {
 				d.options.StatisticHook.OnStatisticStat(stat)
 			}

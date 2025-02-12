@@ -1,6 +1,7 @@
 package statistics
 
 import (
+	"fmt"
 	"github.com/bugVanisher/streamer/media/av"
 	"github.com/bugVanisher/streamer/media/container/flv/flvio"
 	"time"
@@ -73,9 +74,27 @@ type StreamHandler struct {
 	AudioDuration int64
 	AudioBitrate  uint64
 	VideoDelay    int64
+	CodecType     string
 }
 
 // VideoDurationDelay 视频时长与现实时间的diff，毫秒
-func (sh *StreamHandler) VideoDurationDelay() int64 {
-	return (int64(StatInterval) - sh.VideoDuration) / int64(time.Millisecond)
+func (s *StreamHandler) VideoDurationDelay() int64 {
+	return (int64(StatInterval) - s.VideoDuration) / int64(time.Millisecond)
+}
+
+func (s *StreamHandler) String() string {
+	return fmt.Sprintf(
+		"CodecType: %s, Video Bitrate: %.2f kbps, Audio Bitrate: %.2f kbps, Video FPS: %d, Audio FPS: %d, Video GOP: %.2f, Resolution: %dx%d, Video Duration: %d ms, Audio Duration: %d ms, Video Delay: %d ms",
+		s.CodecType,
+		float64(s.VideoBitrate)/1000,
+		float64(s.AudioBitrate)/1000,
+		s.VideoFPS,
+		s.AudioFPS,
+		s.VideoGop,
+		s.VideoWidth,
+		s.VideoHeight,
+		s.VideoDuration/1e6, // 假设 VideoDuration 是纳秒
+		s.AudioDuration/1e6, // 假设 AudioDuration 是纳秒
+		s.VideoDelay/1e6,    // 假设 VideoDelay 是纳秒
+	)
 }
