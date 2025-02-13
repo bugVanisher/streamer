@@ -95,6 +95,6 @@ func (s *StreamHandler) String() string {
 		s.VideoHeight,
 		s.VideoDuration/1e6, // 假设 VideoDuration 是纳秒
 		s.AudioDuration/1e6, // 假设 AudioDuration 是纳秒
-		s.VideoDelay/1e6,    // 假设 VideoDelay 是纳秒
+		s.VideoDelay,        // VideoDelay 是毫秒
 	)
 }
